@@ -16,29 +16,59 @@
 
 import serial
 
+
+# constantes pour le serial
+DEVICE_NAME = '/dev/ttySOFT0'
+BAUD_RATE = 9600
+SERIAL_TIMEOUT = 1
+
+
 # prend en argument la string et retourne un dictionnaire 
 # contenant le data formatté
 def parse_gps_string(raw_data):
     dict_data = {}
+    print(raw_data)
     s = raw_data.split(',')
     
     dict_data['header'] = s[0]
-    dict_data['utc_time'] = s[1]
-    dict_data['latitude'] = s[2]
-    dict_data['ns_indicator'] = s[3]
-    dict_data['longitude'] = s[4]
-    dict_data['ew_indicator'] = s[5]
-    dict_data['quality'] = s[6]
-    dict_data['satellites_used'] = s[7]
-    dict_data['HDOP'] = s[8]
-    dict_data['altitude'] = s[9]
-    dict_data['dgps_station_id'], dict_data['checksum'] = s[-1].split('*')
+    
+    if dict_data['header'] == '$GPGGA':
+        dict_data['utc_time'] = s[1]
+        dict_data['latitude'] = s[2]
+        dict_data['ns_indicator'] = s[3]
+        dict_data['longitude'] = s[4]
+        dict_data['ew_indicator'] = s[5]
+        dict_data['quality'] = s[6]
+        dict_data['satellites_used'] = s[7]
+        dict_data['HDOP'] = s[8]
+        dict_data['altitude'] = s[9]
+        dict_data['dgps_station_id'], dict_data['checksum'] = s[-1].split('*')
+    elif dict_data['header'] == '$GPGLL':
+        dict_data['latitude'] = s[1]
+        dict_data['ns_indicator'] = s[2]
+        dict_data['longitude'] = s[3]
+        dict_data['ew_indicator'] = s[4]
+        dict_data['utc_time'] = s[5]
+        dict_data['status'] = s[6]
+        dict_data['mode_indicator'], dict_data['checksum'] = s[-1].split('*')
+    else:
+        print("GPS format not supported yet")
+        return -1
     
     return dict_data
 
 
+# TODO: vérifier que readline fonctionne avec les fins de ligne du GPS 
+# TODO: vérifier qu'il faut .decode() avant d'envoyer la ligne
+# lit une ligne de data du uart
+def read_gps():
+    with serial.Serial(DEVICE_NAME, BAUD_RATE, timeout=SERIAL_TIMEOUT) as ser:
+        line = ser.readline()
+        return parse_gps_string(line)
+
 
 if __name__ == '__main__':
-    s = '$GPGGA,111636.932,2447.0949,N,12100.5223,E,1,11,0.8,118.2,M,,,,0000*02'
-    print(parse_gps_string(s))
-    
+    s = b'$GPGGA,111636.932,2447.0949,N,12100.5223,E,1,11,0.8,118.2,M,,,,0000*02'
+    print(parse_gps_string(s.decode()))
+    s = b'$GPGLL,2447.0944,N,12100.5213,E,112609.932,A,A*57'
+    print(parse_gps_string(s.decode()))
