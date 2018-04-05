@@ -33,22 +33,22 @@ def parse_gps_string(raw_data):
     dict_data['header'] = s[0]
     
     if dict_data['header'] == '$GPGGA':
-        dict_data['utc_time'] = s[1]
-        dict_data['latitude'] = s[2]
+        dict_data['utc_time'] = float(s[1])
+        dict_data['latitude'] = float(s[2])
         dict_data['ns_indicator'] = s[3]
-        dict_data['longitude'] = s[4]
+        dict_data['longitude'] = float(s[4])
         dict_data['ew_indicator'] = s[5]
-        dict_data['quality'] = s[6]
-        dict_data['satellites_used'] = s[7]
-        dict_data['HDOP'] = s[8]
-        dict_data['altitude'] = s[9]
+        dict_data['quality'] = int(s[6])
+        dict_data['satellites_used'] = int(s[7])
+        dict_data['HDOP'] = float(s[8])
+        dict_data['altitude'] = float(s[9])
         dict_data['dgps_station_id'], dict_data['checksum'] = s[-1].split('*')
     elif dict_data['header'] == '$GPGLL':
-        dict_data['latitude'] = s[1]
+        dict_data['latitude'] = float(s[1])
         dict_data['ns_indicator'] = s[2]
-        dict_data['longitude'] = s[3]
+        dict_data['longitude'] = float(s[3])
         dict_data['ew_indicator'] = s[4]
-        dict_data['utc_time'] = s[5]
+        dict_data['utc_time'] = float(s[5])
         dict_data['status'] = s[6]
         dict_data['mode_indicator'], dict_data['checksum'] = s[-1].split('*')
     else:
@@ -60,6 +60,8 @@ def parse_gps_string(raw_data):
 
 # TODO: vérifier que readline fonctionne avec les fins de ligne du GPS 
 # TODO: vérifier qu'il faut .decode() avant d'envoyer la ligne
+# TODO: vérifier que le with statement close le port comme il faut et qu'on 
+#       peut le réutiliser
 # lit une ligne de data du uart
 def read_gps():
     with serial.Serial(DEVICE_NAME, BAUD_RATE, timeout=SERIAL_TIMEOUT) as ser:
