@@ -13,11 +13,11 @@
 #define TX_BUFFER_FLUSH_TIMEOUT 4000  // milliseconds
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Adriano Marto Reis");
-MODULE_DESCRIPTION("Software-UART for Raspberry Pi");
+MODULE_AUTHOR("Maxime Guillemette");
+MODULE_DESCRIPTION("Software-UART for Raspberry Pi 3B on the ground basestation");
 MODULE_VERSION("0.1");
 
-static int gpio_tx = 17;
+static int gpio_tx = 22;
 module_param(gpio_tx, int, 0);
 
 static int gpio_rx = 27;
