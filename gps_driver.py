@@ -106,8 +106,11 @@ def parse_gps_string(raw_data):
 def read_gps():
     global ser
     line = ser.readline()
-    return parse_gps_string(line)
-
+    try:
+        return parse_gps_string(line)
+    except BaseException as e:
+        print(e)
+    sleep(0.2)
 
 # ouvre le port serial, ne devrait pas être appellée à moins que la fonction 
 # close ait été appellée avant
