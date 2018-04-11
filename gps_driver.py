@@ -15,7 +15,8 @@
 """
 
 import serial
-
+import subprocess
+from time import sleep
 
 # constantes pour le serial
 DEVICE_NAME = '/dev/ttySOFT0'
@@ -93,7 +94,7 @@ def parse_gps_string(raw_data):
         dict_data['speed_kmph'] = float(s[7])
         dict_data['mode_indicator'], dict_data['checksum'] = s[-1].split('*')
     else:
-        print("GPS format not supported yet")
+        print("GPS format not supported yet:\n{}".format(raw_data))
         return -1
     return dict_data
 
@@ -105,12 +106,19 @@ def parse_gps_string(raw_data):
 # lit une ligne de data du uart
 def read_gps():
     global ser
-    line = ser.readline()
+    for i in range(10):
+        line = ser.readline().decode()
+        if line == '':
+            #reset_uart_module()
+            pass
+        else:
+            break
+    else:
+        return -1
     try:
         return parse_gps_string(line)
     except BaseException as e:
         print(e)
-    sleep(0.2)
 
 # ouvre le port serial, ne devrait pas être appellée à moins que la fonction 
 # close ait été appellée avant
@@ -123,6 +131,15 @@ def open_port():
 def close_port():
     global ser
     ser.close()
+
+
+# reset le kernel module du software UART
+def reset_uart_module():
+    close_port()
+    r = subprocess.call(['sudo rmmod soft_uart'], shell=True)
+    r = subprocess.call(['sudo insmod soft_uart-master/soft_uart.ko gpio_tx=22 gpio_rx=27'], shell=True)
+    open_port()
+
 
 if __name__ == '__main__':
     """
