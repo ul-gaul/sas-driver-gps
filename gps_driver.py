@@ -125,6 +125,7 @@ def close_port():
     ser.close()
 
 if __name__ == '__main__':
+    """
     s = b'$GPGGA,111636.932,2447.0949,N,12100.5223,E,1,11,0.8,118.2,M,,,,0000*02'
     p = parse_gps_string(s.decode())
     for k, v in p.items():
@@ -149,4 +150,7 @@ if __name__ == '__main__':
     p = parse_gps_string(s.decode())
     for k, v in p.items():
         print(k, ' : ', v)
-    
+    """
+    for i in range(20):
+        print(read_gps())
+    close_port()
