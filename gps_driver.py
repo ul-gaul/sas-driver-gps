@@ -20,8 +20,8 @@ import serial
 # constantes pour le serial
 DEVICE_NAME = '/dev/ttySOFT0'
 BAUD_RATE = 9600
-SERIAL_TIMEOUT = 1
-
+SERIAL_TIMEOUT = 0
+ser = serial.Serial(DEVICE_NAME, BAUD_RATE, timeout=SERIAL_TIMEOUT)
 
 # prend en argument la string et retourne un dictionnaire 
 # contenant le data formatté
@@ -104,10 +104,22 @@ def parse_gps_string(raw_data):
 #       peut le réutiliser
 # lit une ligne de data du uart
 def read_gps():
-    with serial.Serial(DEVICE_NAME, BAUD_RATE, timeout=SERIAL_TIMEOUT) as ser:
-        line = ser.readline()
-        return parse_gps_string(line)
+    global ser
+    line = ser.readline()
+    return parse_gps_string(line)
 
+
+# ouvre le port serial, ne devrait pas être appellée à moins que la fonction 
+# close ait été appellée avant
+def open_port():
+    global ser
+    ser.open()
+
+
+# ferme le port serial
+def close_port():
+    global ser
+    ser.close()
 
 if __name__ == '__main__':
     s = b'$GPGGA,111636.932,2447.0949,N,12100.5223,E,1,11,0.8,118.2,M,,,,0000*02'
@@ -134,3 +146,4 @@ if __name__ == '__main__':
     p = parse_gps_string(s.decode())
     for k, v in p.items():
         print(k, ' : ', v)
+    
