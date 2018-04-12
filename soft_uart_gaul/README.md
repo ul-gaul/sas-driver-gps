@@ -18,7 +18,7 @@ This module creates a software-based serial port using a configurable pair of GP
 
 Fetch the source:
 ```
-git clone https://github.com/adrianomarto/soft_uart
+git clone https://github.com/ul-gaul/sas-driver-gps.git
 ```
 
 Install the package `raspberrypi-kernel-headers`:
@@ -50,7 +50,7 @@ I haven't tried cross-compiling this module, but it should work as well.
 
 Module parameters:
 
-* gpio_tx: int [default = 17]
+* gpio_tx: int [default = 22]
 * gpio_rx: int [default = 27]
 
 Loading the module with default parameters:
@@ -78,6 +78,7 @@ Usage examples:
 minicom -b 4800 -D /dev/ttySOFT0
 cat /dev/ttySOFT0
 echo "hello" > /dev/ttySOFT0
+python3 gps_driver.py
 ```
 
 ## Baud rate
@@ -87,4 +88,4 @@ When choosing the baud rate, take into account that:
 * You will probably not be running a real-time operating system.
 * There will be other processes competing for CPU time.
 
-As a result, you can expect communication errors when using fast baud rates. So I would not try to go any faster than 4800 bps.
+As a result, you can expect communication errors when using fast baud rates. So I would not try to go any faster than 9600 bps.
