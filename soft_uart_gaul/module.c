@@ -69,101 +69,93 @@ static struct tty_port port;
 /**
  * Module initialization.
  */
-static int __init soft_uart_init(void)
-{
-  printk(KERN_INFO "soft_uart: Initializing module...\n");
-  
-  if (!raspberry_soft_uart_init(gpio_tx, gpio_rx))
-  {
-    printk(KERN_ALERT "soft_uart: Failed initialize GPIO.\n");
-    return -ENOMEM;
-  }
-    
+static int __init soft_uart_init(void) {
+    printk(KERN_INFO "soft_uart: Initializing module...\n");
+
+    if (!raspberry_soft_uart_init(gpio_tx, gpio_rx)) {
+        printk(KERN_ALERT "soft_uart: Failed initialize GPIO.\n");
+        return -ENOMEM;
+    }
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-  printk(KERN_INFO "soft_uart: LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0).\n");
+    printk(KERN_INFO "soft_uart: LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0).\n");
 
-  // Initializes the port.
-  tty_port_init(&port);
-  port.low_latency = 0;
+    // Initializes the port.
+    tty_port_init(&port);
+    port.low_latency = 0;
 
-  // Allocates the driver.
-  soft_uart_driver = tty_alloc_driver(N_PORTS, TTY_DRIVER_REAL_RAW);
+    // Allocates the driver.
+    soft_uart_driver = tty_alloc_driver(N_PORTS, TTY_DRIVER_REAL_RAW);
 
-  // Returns if the allocation fails.
-  if (IS_ERR(soft_uart_driver))
-  {
-    printk(KERN_ALERT "soft_uart: Failed to allocate the driver.\n");
-    return -ENOMEM;
-  }
+    // Returns if the allocation fails.
+    if (IS_ERR(soft_uart_driver)) {
+        printk(KERN_ALERT "soft_uart: Failed to allocate the driver.\n");
+        return -ENOMEM;
+    }
 #else
-  printk(KERN_INFO "soft_uart: LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0).\n");
+    printk(KERN_INFO "soft_uart: LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0).\n");
 
-  // Allocates the driver.
-  soft_uart_driver = alloc_tty_driver(N_PORTS);
+    // Allocates the driver.
+    soft_uart_driver = alloc_tty_driver(N_PORTS);
 
-  // Returns if the allocation fails.
-  if (!soft_uart_driver)
-  {
-    printk(KERN_ALERT "soft_uart: Failed to allocate the driver.\n");
-    return -ENOMEM;
-  }
+    // Returns if the allocation fails.
+    if (!soft_uart_driver) {
+        printk(KERN_ALERT "soft_uart: Failed to allocate the driver.\n");
+        return -ENOMEM;
+    }
 #endif
 
-  // Initializes the driver.
-  soft_uart_driver->owner                 = THIS_MODULE;
-  soft_uart_driver->driver_name           = "soft_uart";
-  soft_uart_driver->name                  = "ttySOFT";
-  soft_uart_driver->major                 = SOFT_UART_MAJOR;
-  soft_uart_driver->minor_start           = 0;
-  soft_uart_driver->flags                 = TTY_DRIVER_REAL_RAW;
-  soft_uart_driver->type                  = TTY_DRIVER_TYPE_SERIAL;
-  soft_uart_driver->subtype               = SERIAL_TYPE_NORMAL;
-  soft_uart_driver->init_termios          = tty_std_termios;
-  soft_uart_driver->init_termios.c_ispeed = 4800;
-  soft_uart_driver->init_termios.c_ospeed = 4800;
-  soft_uart_driver->init_termios.c_cflag  = B4800 | CREAD | CS8 | CLOCAL;
+    // Initializes the driver.
+    soft_uart_driver->owner                 = THIS_MODULE;
+    soft_uart_driver->driver_name           = "soft_uart";
+    soft_uart_driver->name                  = "ttyGAUL";
+    soft_uart_driver->major                 = SOFT_UART_MAJOR;
+    soft_uart_driver->minor_start           = 0;
+    soft_uart_driver->flags                 = TTY_DRIVER_REAL_RAW;
+    soft_uart_driver->type                  = TTY_DRIVER_TYPE_SERIAL;
+    soft_uart_driver->subtype               = SERIAL_TYPE_NORMAL;
+    soft_uart_driver->init_termios          = tty_std_termios;
+    soft_uart_driver->init_termios.c_ispeed = 9600;
+    soft_uart_driver->init_termios.c_ospeed = 9600;
+    soft_uart_driver->init_termios.c_cflag  = B9600 | CREAD | CS8 | CLOCAL;
 
-  // Sets the callbacks for the driver.
-  tty_set_operations(soft_uart_driver, &soft_uart_operations);
+    // Sets the callbacks for the driver.
+    tty_set_operations(soft_uart_driver, &soft_uart_operations);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-  // Link the port with the driver.
-  tty_port_link_device(&port, soft_uart_driver, 0);
+    // Link the port with the driver.
+    tty_port_link_device(&port, soft_uart_driver, 0);
 #endif
 
-  // Registers the TTY driver.
-  if (tty_register_driver(soft_uart_driver))
-  {
-    printk(KERN_ALERT "soft_uart: Failed to register the driver.\n");
-    put_tty_driver(soft_uart_driver);
-    return -1; // return if registration fails
-  }
+    // Registers the TTY driver.
+    if (tty_register_driver(soft_uart_driver)) {
+        printk(KERN_ALERT "soft_uart: Failed to register the driver.\n");
+        put_tty_driver(soft_uart_driver);
+        return -1; // return if registration fails
+    }
 
-  printk(KERN_INFO "soft_uart: Module initialized.\n");
-  return 0;
+    printk(KERN_INFO "soft_uart: Module initialized.\n");
+    return 0;
 }
 
 /**
  * Cleanup function that gets called when the module is unloaded.
  */
-static void __exit soft_uart_exit(void)
-{
-  printk(KERN_INFO "soft_uart: Finalizing the module...\n");
-  
-  // Finalizes the soft UART.
-  if (!raspberry_soft_uart_finalize())
-  {
-    printk(KERN_ALERT "soft_uart: Something went wrong whilst finalizing the soft UART.\n");
-  }
-  
-  // Unregisters the driver.
-  if (tty_unregister_driver(soft_uart_driver))
-  {
-    printk(KERN_ALERT "soft_uart: Failed to unregister the driver.\n");
-  }
+static void __exit soft_uart_exit(void) {
+    printk(KERN_INFO "soft_uart: Finalizing the module...\n");
 
-  put_tty_driver(soft_uart_driver);
-  printk(KERN_INFO "soft_uart: Module finalized.\n");
+    // Finalizes the soft UART.
+    if (!raspberry_soft_uart_finalize()) {
+        printk(KERN_ALERT "soft_uart: Something went wrong whilst finalizing the soft UART.\n");
+    }
+  
+    // Unregisters the driver.
+    if (tty_unregister_driver(soft_uart_driver)) {
+        printk(KERN_ALERT "soft_uart: Failed to unregister the driver.\n");
+    }
+
+    put_tty_driver(soft_uart_driver);
+    printk(KERN_INFO "soft_uart: Module finalized.\n");
 }
 
 /**
@@ -172,21 +164,17 @@ static void __exit soft_uart_exit(void)
  * @param file
  * @return error code.
  */
-static int soft_uart_open(struct tty_struct* tty, struct file* file)
-{
-  int error = NONE;
-    
-  if (raspberry_soft_uart_open(tty))
-  {
-    printk(KERN_INFO "soft_uart: Device opened.\n");
-  }
-  else
-  {
-    printk(KERN_ALERT "soft_uart: Device busy.\n");
-    error = -ENODEV;
-  }
-  
-  return error;
+static int soft_uart_open(struct tty_struct* tty, struct file* file) {
+    int error = NONE;
+
+    if (raspberry_soft_uart_open(tty)) {
+        printk(KERN_INFO "soft_uart: Device opened.\n");
+    } else {
+        printk(KERN_ALERT "soft_uart: Device busy.\n");
+        error = -ENODEV;
+    }
+
+    return error;
 }
 
 /**
@@ -194,25 +182,20 @@ static int soft_uart_open(struct tty_struct* tty, struct file* file)
  * @param tty
  * @param file
  */
-static void soft_uart_close(struct tty_struct* tty, struct file* file)
-{
-  // Waits for the TX buffer to be empty before closing the UART.
-  int wait_time = 0;
-  while ((raspberry_soft_uart_get_tx_queue_size() > 0)
-    && (wait_time < TX_BUFFER_FLUSH_TIMEOUT))
-  {
-    msleep(100);
-    wait_time += 100;
-  }
-  
-  if (raspberry_soft_uart_close())
-  {
-    printk(KERN_INFO "soft_uart: Device closed.\n");
-  }
-  else
-  {
-    printk(KERN_ALERT "soft_uart: Could not close the device.\n");
-  }
+static void soft_uart_close(struct tty_struct* tty, struct file* file) {
+    // Waits for the TX buffer to be empty before closing the UART.
+    int wait_time = 0;
+    while ((raspberry_soft_uart_get_tx_queue_size() > 0)
+    && (wait_time < TX_BUFFER_FLUSH_TIMEOUT)) {
+        msleep(100);
+        wait_time += 100;
+    }
+
+    if (raspberry_soft_uart_close()) {
+        printk(KERN_INFO "soft_uart: Device closed.\n");
+    } else {
+        printk(KERN_ALERT "soft_uart: Could not close the device.\n");
+    }
 }
 
 /**
@@ -222,9 +205,8 @@ static void soft_uart_close(struct tty_struct* tty, struct file* file)
  * @param buffer_size number of bytes contained in the given buffer
  * @return number of bytes successfuly written into the TTY device
  */
-static int soft_uart_write(struct tty_struct* tty, const unsigned char* buffer, int buffer_size)
-{
-  return raspberry_soft_uart_send_string(buffer, buffer_size);
+static int soft_uart_write(struct tty_struct* tty, const unsigned char* buffer, int buffer_size) {
+    return raspberry_soft_uart_send_string(buffer, buffer_size);
 }
 
 /**
@@ -232,17 +214,16 @@ static int soft_uart_write(struct tty_struct* tty, const unsigned char* buffer, 
  * @param tty given TTY
  * @return number of bytes
  */
-static int soft_uart_write_room(struct tty_struct* tty)
-{
-  return raspberry_soft_uart_get_tx_queue_room();
+static int soft_uart_write_room(struct tty_struct* tty) {
+    return raspberry_soft_uart_get_tx_queue_room();
 }
 
 /**
  * Does nothing.
  * @param tty
  */
-static void soft_uart_flush_buffer(struct tty_struct* tty)
-{
+static void soft_uart_flush_buffer(struct tty_struct* tty) {
+    
 }
 
 /**
@@ -252,7 +233,7 @@ static void soft_uart_flush_buffer(struct tty_struct* tty)
  */
 static int soft_uart_chars_in_buffer(struct tty_struct* tty)
 {
-  return raspberry_soft_uart_get_tx_queue_size();
+    return raspberry_soft_uart_get_tx_queue_size();
 }
 
 /**
@@ -262,76 +243,68 @@ static int soft_uart_chars_in_buffer(struct tty_struct* tty)
  */
 static void soft_uart_set_termios(struct tty_struct* tty, struct ktermios* termios)
 {
-  int cflag = 0;
-  speed_t baudrate = tty_get_baud_rate(tty);
-  printk(KERN_INFO "soft_uart: soft_uart_set_termios: baudrate = %d.\n", baudrate);
+    int cflag = 0;
+    speed_t baudrate = tty_get_baud_rate(tty);
+    printk(KERN_INFO "soft_uart: soft_uart_set_termios: baudrate = %d.\n", baudrate);
 
-  // Gets the cflag.
+    // Gets the cflag.
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-  cflag = tty->termios.c_cflag;
+    cflag = tty->termios.c_cflag;
 #else
-  cflag = tty->termios->c_cflag;
+    cflag = tty->termios->c_cflag;
 #endif
 
-  // Verifies the number of data bits (it must be 8).
-  if ((cflag & CSIZE) != CS8)
-  {
-    printk(KERN_ALERT "soft_uart: Invalid number of data bits.\n");
-  }
-  
-  // Verifies the number of stop bits (it must be 1).
-  if (cflag & CSTOPB)
-  {
-    printk(KERN_ALERT "soft_uart: Invalid number of stop bits.\n");
-  }
-  
-  // Verifies the parity (it must be none).
-  if (cflag & PARENB)
-  {
-    printk(KERN_ALERT "soft_uart: Invalid parity.\n");
-  }
-  
-  // Configure the baudrate.
-  if (!raspberry_soft_uart_set_baudrate(baudrate))
-  {
-    printk(KERN_ALERT "soft_uart: Invalid baudrate.\n");
-  }
+    // Verifies the number of data bits (it must be 8).
+    if ((cflag & CSIZE) != CS8) {
+        printk(KERN_ALERT "soft_uart: Invalid number of data bits.\n");
+    }
+
+    // Verifies the number of stop bits (it must be 1).
+    if (cflag & CSTOPB) {
+        printk(KERN_ALERT "soft_uart: Invalid number of stop bits.\n");
+    }
+
+    // Verifies the parity (it must be none).
+    if (cflag & PARENB) {
+        printk(KERN_ALERT "soft_uart: Invalid parity.\n");
+    }
+
+    // Configure the baudrate.
+    if (!raspberry_soft_uart_set_baudrate(baudrate)) {
+        printk(KERN_ALERT "soft_uart: Invalid baudrate.\n");
+    }
 }
 
 /**
  * Does nothing.
  * @param tty
  */
-static void soft_uart_stop(struct tty_struct* tty)
-{
-  printk(KERN_DEBUG "soft_uart: soft_uart_stop.\n");
+static void soft_uart_stop(struct tty_struct* tty) {
+    printk(KERN_DEBUG "soft_uart: soft_uart_stop.\n");
 }
 
 /**
  * Does nothing.
  * @param tty
  */
-static void soft_uart_start(struct tty_struct* tty)
-{
-  printk(KERN_DEBUG "soft_uart: soft_uart_start.\n");
+static void soft_uart_start(struct tty_struct* tty) {
+    printk(KERN_DEBUG "soft_uart: soft_uart_start.\n");
 }
 
 /**
  * Does nothing.
  * @param tty
  */
-static void soft_uart_hangup(struct tty_struct* tty)
-{
-  printk(KERN_DEBUG "soft_uart: soft_uart_hangup.\n");
+static void soft_uart_hangup(struct tty_struct* tty) {
+    printk(KERN_DEBUG "soft_uart: soft_uart_hangup.\n");
 }
 
 /**
  * Does nothing.
  * @param tty
  */
-static int soft_uart_tiocmget(struct tty_struct* tty)
-{
-  return 0;
+static int soft_uart_tiocmget(struct tty_struct* tty) {
+    return 0;
 }
 
 /**
@@ -340,9 +313,8 @@ static int soft_uart_tiocmget(struct tty_struct* tty)
  * @param set
  * @param clear
  */
-static int soft_uart_tiocmset(struct tty_struct* tty, unsigned int set, unsigned int clear)
-{
-  return 0;
+static int soft_uart_tiocmset(struct tty_struct* tty, unsigned int set, unsigned int clear) {
+    return 0;
 }
 
 /**
@@ -351,44 +323,40 @@ static int soft_uart_tiocmset(struct tty_struct* tty, unsigned int set, unsigned
  * @param command
  * @param parameter
  */
-static int soft_uart_ioctl(struct tty_struct* tty, unsigned int command, unsigned int long parameter)
-{
-  int error = NONE;
+static int soft_uart_ioctl(struct tty_struct* tty, unsigned int command, unsigned int long parameter) {
+    int error = NONE;
 
-  switch (command)
-  {
+    switch (command) {
     case TIOCMSET:
-      error = NONE;
-      break;
- 
+        error = NONE;
+        break;
+
     case TIOCMGET:
-      error = NONE;
-      break;
-      
-      default:
+        error = NONE;
+        break;
+        
+        default:
         error = -ENOIOCTLCMD;
         break;
-  }
+    }
 
-  return error;
+    return error;
 }
 
 /**
  * Does nothing.
  * @param tty
  */
-static void soft_uart_throttle(struct tty_struct* tty)
-{
-  printk(KERN_DEBUG "soft_uart: soft_uart_throttle.\n");
+static void soft_uart_throttle(struct tty_struct* tty) {
+    printk(KERN_DEBUG "soft_uart: soft_uart_throttle.\n");
 }
 
 /**
  * Does nothing.
  * @param tty
  */
-static void soft_uart_unthrottle(struct tty_struct* tty)
-{
-  printk(KERN_DEBUG "soft_uart: soft_uart_unthrottle.\n");
+static void soft_uart_unthrottle(struct tty_struct* tty) {
+    printk(KERN_DEBUG "soft_uart: soft_uart_unthrottle.\n");
 }
 
 // Module entry points.
