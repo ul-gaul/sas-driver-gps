@@ -103,20 +103,18 @@ int raspberry_soft_uart_open(struct tty_struct* tty) {
 /**
  * Closes the Soft UART.
  */
-int raspberry_soft_uart_close(void)
-{
-  int success = 0;
-  mutex_lock(&current_tty_mutex);
-  if (current_tty != NULL)
-  {
-    disable_irq(gpio_to_irq(gpio_rx));
-    hrtimer_cancel(&timer_tx);
-    hrtimer_cancel(&timer_rx);
-    current_tty = NULL;
-    success = 1;
-  }
-  mutex_unlock(&current_tty_mutex);
-  return success;
+int raspberry_soft_uart_close(void) {
+    int success = 0;
+    mutex_lock(&current_tty_mutex);
+    if (current_tty != NULL) {
+        disable_irq(gpio_to_irq(gpio_rx));
+        hrtimer_cancel(&timer_tx);
+        hrtimer_cancel(&timer_rx);
+        current_tty = NULL;
+        success = 1;
+    }
+    mutex_unlock(&current_tty_mutex);
+    return success;
 }
 
 /**
@@ -124,11 +122,10 @@ int raspberry_soft_uart_close(void)
  * @param baudrate desired baudrate
  * @return 1 if the operation is successful. 0 otherwise.
  */
-int raspberry_soft_uart_set_baudrate(const int baudrate) 
-{
-  period = ktime_set(0, 1000000000/baudrate);
-  gpio_set_debounce(gpio_rx, 1000/baudrate/2);
-  return 1;
+int raspberry_soft_uart_set_baudrate(const int baudrate) {
+    period = ktime_set(0, 1000000000/baudrate);
+    gpio_set_debounce(gpio_rx, 1000/baudrate/2);
+    return 1;
 }
 
 /**
