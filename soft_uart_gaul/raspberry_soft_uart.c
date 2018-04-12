@@ -87,19 +87,17 @@ int raspberry_soft_uart_finalize(void)
  * @param tty
  * @return 1 if the operation is successful. 0 otherwise.
  */
-int raspberry_soft_uart_open(struct tty_struct* tty)
-{
-  int success = 0;
-  mutex_lock(&current_tty_mutex);
-  if (current_tty == NULL)
-  {
-    current_tty = tty;
-    initialize_queue(&queue_tx);
-    success = 1;
-    enable_irq(gpio_to_irq(gpio_rx));
-  }
-  mutex_unlock(&current_tty_mutex);
-  return success;
+int raspberry_soft_uart_open(struct tty_struct* tty) {
+    int success = 0;
+    mutex_lock(&current_tty_mutex);
+    if (current_tty == NULL) {
+        current_tty = tty;
+        initialize_queue(&queue_tx);
+        success = 1;
+        enable_irq(gpio_to_irq(gpio_rx));
+    }
+    mutex_unlock(&current_tty_mutex);
+    return success;
 }
 
 /**
