@@ -186,7 +186,7 @@ static void soft_uart_close(struct tty_struct* tty, struct file* file) {
     // Waits for the TX buffer to be empty before closing the UART.
     int wait_time = 0;
     while ((raspberry_soft_uart_get_tx_queue_size() > 0)
-    && (wait_time < TX_BUFFER_FLUSH_TIMEOUT)) {
+            && (wait_time < TX_BUFFER_FLUSH_TIMEOUT)) {
         msleep(100);
         wait_time += 100;
     }
@@ -231,8 +231,7 @@ static void soft_uart_flush_buffer(struct tty_struct* tty) {
  * @param tty given TTY
  * @return number of bytes
  */
-static int soft_uart_chars_in_buffer(struct tty_struct* tty)
-{
+static int soft_uart_chars_in_buffer(struct tty_struct* tty) {
     return raspberry_soft_uart_get_tx_queue_size();
 }
 
@@ -241,8 +240,7 @@ static int soft_uart_chars_in_buffer(struct tty_struct* tty)
  * @param tty given TTY
  * @param termios parameters
  */
-static void soft_uart_set_termios(struct tty_struct* tty, struct ktermios* termios)
-{
+static void soft_uart_set_termios(struct tty_struct* tty, struct ktermios* termios) {
     int cflag = 0;
     speed_t baudrate = tty_get_baud_rate(tty);
     printk(KERN_INFO "soft_uart: soft_uart_set_termios: baudrate = %d.\n", baudrate);
