@@ -19,7 +19,7 @@ import subprocess
 from time import sleep
 
 # constantes pour le serial
-DEVICE_NAME = '/dev/ttySOFT0'
+DEVICE_NAME = '/dev/ttyGAUL0'
 BAUD_RATE = 9600
 SERIAL_TIMEOUT = 0
 ser = serial.Serial(DEVICE_NAME, BAUD_RATE, timeout=SERIAL_TIMEOUT)
